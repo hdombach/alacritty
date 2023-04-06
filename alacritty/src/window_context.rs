@@ -478,7 +478,14 @@ impl WindowContext {
             && !self.occluded
             && !matches!(event, WinitEvent::WindowEvent { event: WindowEvent::RedrawRequested, .. })
         {
-            self.display.window.request_redraw();
+            self.display.draw(
+                terminal,
+                scheduler,
+                &self.message_buffer,
+                &self.config,
+                &mut self.search_state,
+            );
+            //self.display.window.request_redraw();
         }
     }
 

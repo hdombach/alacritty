@@ -27,6 +27,7 @@ pub mod platform;
 pub mod rects;
 mod shader;
 mod text;
+mod effects;
 
 pub use text::{GlyphCache, LoaderApi};
 
@@ -40,6 +41,8 @@ macro_rules! cstr {
     };
 }
 pub(crate) use cstr;
+
+use self::effects::EffectRenderer;
 
 /// Whether the OpenGL functions have been loaded.
 pub static GL_FUNS_LOADED: AtomicBool = AtomicBool::new(false);
@@ -97,6 +100,7 @@ enum TextRendererProvider {
 pub struct Renderer {
     text_renderer: TextRendererProvider,
     rect_renderer: RectRenderer,
+    effect_renderer: EffectRenderer,
     robustness: bool,
 }
 
@@ -158,6 +162,8 @@ impl Renderer {
             None => (shader_version.as_ref() >= "3.3" && !is_gles_context, true),
         };
 
+        let mut effect_renderer = EffectRenderer::new(ShaderVersion::Glsl3)?;
+
         let (text_renderer, rect_renderer) = if use_glsl3 {
             let text_renderer = TextRendererProvider::Glsl3(Glsl3Renderer::new()?);
             let rect_renderer = RectRenderer::new(ShaderVersion::Glsl3)?;
@@ -179,7 +185,7 @@ impl Renderer {
             }
         }
 
-        Ok(Self { text_renderer, rect_renderer, robustness })
+        Ok(Self { text_renderer, rect_renderer, robustness, effect_renderer })
     }
 
     pub fn draw_cells<I: Iterator<Item = RenderableCell>>(
@@ -272,6 +278,29 @@ impl Renderer {
         }
     }
 
+    pub fn setup_effects(&mut self) {
+        self.effect_renderer.setup();
+    }
+
+    pub fn draw_effects(&mut self, size_info: &SizeInfo) {
+        unsafe {
+            // Remove padding from viewport.
+            gl::Viewport(0, 0, size_info.width() as i32, size_info.height() as i32);
+            gl::BlendFuncSeparate(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA, gl::SRC_ALPHA, gl::ONE);
+        }
+
+        self.effect_renderer.draw(size_info);
+
+        unsafe {
+            // Reset blending strategy.
+            gl::BlendFunc(gl::SRC1_COLOR, gl::ONE_MINUS_SRC1_COLOR);
+
+            // Restore viewport with padding.
+            self.set_viewport(size_info);
+        }
+
+    }
+
     /// Fill the window with `color` and `alpha`.
     pub fn clear(&self, color: Rgb, alpha: f32) {
         unsafe {
@@ -354,6 +383,7 @@ impl Renderer {
             TextRendererProvider::Gles2(renderer) => renderer.resize(size_info),
             TextRendererProvider::Glsl3(renderer) => renderer.resize(size_info),
         }
+        self.effect_renderer.resize(size_info);
     }
 }
 
