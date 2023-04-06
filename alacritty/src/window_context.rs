@@ -16,6 +16,7 @@ use glutin::context::NotCurrentContext;
 use glutin::display::GetGlDisplay;
 #[cfg(all(feature = "x11", not(any(target_os = "macos", windows))))]
 use glutin::platform::x11::X11GlConfigExt;
+use libc::sleep;
 use log::{error, info};
 use raw_window_handle::HasRawDisplayHandle;
 use serde_json as json;
@@ -501,6 +502,7 @@ impl WindowContext {
                 &self.config,
                 &self.search_state,
             );
+            //self.display.window.request_redraw();
         }
     }
 

@@ -794,6 +794,8 @@ impl Display {
         let has_highlighted_hint =
             self.highlighted_hint.is_some() || self.vi_highlighted_hint.is_some();
 
+        self.renderer.setup_effects();
+
         // Draw grid.
         {
             let _sampler = self.meter.sampler();
@@ -962,11 +964,14 @@ impl Display {
 
         self.draw_render_timer(config);
 
+
         // Draw hyperlink uri preview.
         if has_highlighted_hint {
             let cursor_point = vi_cursor_point.or(Some(cursor_point));
             self.draw_hyperlink_preview(config, cursor_point, display_offset);
         }
+
+        self.renderer.draw_effects(&size_info);
 
         // Frame event should be requested before swapping buffers on Wayland, since it requires
         // surface `commit`, which is done by swap buffers under the hood.

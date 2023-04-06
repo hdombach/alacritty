@@ -9,7 +9,8 @@ varying color_t color;
 #define float_t float
 #define color_t vec4
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+//out vec4 FragColor;
 #define FRAG_COLOR FragColor
 
 flat in color_t color;

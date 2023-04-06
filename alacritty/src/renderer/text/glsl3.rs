@@ -162,6 +162,7 @@ impl<'a> TextRenderer<'a> for Glsl3Renderer {
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
             gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo_instance);
             gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, self.active_tex)
         }
 
         let res = func(RenderApi {
@@ -420,6 +421,8 @@ pub struct TextShaderProgram {
     ///
     /// Rendering is split into two passes; one for backgrounds, and one for text.
     u_rendering_pass: GLint,
+
+    u_font_mask: GLint,
 }
 
 impl TextShaderProgram {
@@ -429,6 +432,7 @@ impl TextShaderProgram {
             u_projection: program.get_uniform_location(cstr!("projection"))?,
             u_cell_dim: program.get_uniform_location(cstr!("cellDim"))?,
             u_rendering_pass: program.get_uniform_location(cstr!("renderingPass"))?,
+            u_font_mask: program.get_uniform_location(cstr!("mask"))?,
             program,
         })
     }
@@ -447,6 +451,7 @@ impl TextShaderProgram {
 
         unsafe {
             gl::Uniform1i(self.u_rendering_pass, value);
+            gl::Uniform1i(self.u_font_mask, 0);
         }
     }
 }
